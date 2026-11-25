@@ -1,0 +1,729 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Youth Influence on Environmental Policy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fira+Sans:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+/* Layout idea: every slide is a fixed 1600x900 canvas scaled to fit any screen, so it looks the same on a laptop, a Windows monitor or a projector. A rising trail of section "camps" runs across the top; mint paper, forest ink, leaf green for structure, amber only for revised / new / weakest / risk. */
+:root {
+  --paper: #EEF5EF;
+  --ink: #0C3324;
+  --muted: #3A5A4D;
+  --leaf: #1D7349;
+  --leaf-soft: #D2EAD9;
+  --forest: #0F3A2A;
+  --sun: #8F5300;
+  --sun-soft: #FCEBC8;
+  --sunlit: #F2C14E;
+  --line: #B5D1C0;
+  --white: #FFFFFF;
+  --display: "Fira Sans", "Segoe UI", Arial, sans-serif;
+  --body: "Fira Sans", "Segoe UI", Arial, sans-serif;
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { background: #0A2219; font-family: var(--body); color: var(--ink); overflow: hidden; }
+#viewport { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; }
+#stage { width: 1600px; height: 900px; position: relative; background: var(--paper); transform-origin: center center; flex: none; overflow: hidden; }
+
+/* trail */
+.trail { position: absolute; top: 0; left: 0; right: 0; height: 92px; display: flex; background: var(--paper); border-bottom: 3px solid var(--line); z-index: 3; }
+.trail .here { width: 380px; flex: none; display: flex; flex-direction: column; justify-content: center; padding: 0 28px; border-right: 3px solid var(--line); }
+.trail .here small { font-size: 17px; font-weight: 700; color: var(--leaf); text-transform: uppercase; letter-spacing: .06em; }
+.trail .here span { font-family: var(--display); font-weight: 800; font-size: 34px; line-height: 1.05; }
+.trail .route { position: relative; flex: 1; }
+.trail .route svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.camps { position: absolute; inset: 0; display: flex; justify-content: space-between; align-items: flex-end; padding: 0 22px 10px; }
+.camp { display: flex; flex-direction: column; align-items: center; gap: 3px; flex: 1; }
+.camp i { display: block; width: 20px; height: 20px; border-radius: 50%; background: var(--white); border: 3px solid var(--leaf); }
+.camp em { font-style: normal; font-size: 15px; font-weight: 700; color: var(--muted); white-space: nowrap; background: rgba(238,245,239,.9); padding: 0 4px; border-radius: 6px; }
+.camp.done i { background: var(--leaf); }
+.camp.now i { width: 30px; height: 30px; background: var(--sunlit); border-color: var(--forest); box-shadow: 0 0 0 5px rgba(242,193,78,.45); }
+.camp.now em { color: var(--forest); font-size: 18px; }
+#stage.dark .trail { background: var(--forest); border-color: #2C5E48; }
+#stage.dark .trail .here { border-color: #2C5E48; color: #F3FAF5; }
+#stage.dark .trail .here small { color: var(--sunlit); }
+#stage.dark .camp em { background: rgba(15,58,42,.9); color: #CFE6D8; }
+#stage.dark .camp.now em { color: var(--sunlit); }
+
+/* slides */
+.slide { position: absolute; inset: 0; display: none; padding: 116px 64px 84px; flex-direction: column; justify-content: center; gap: 18px; }
+.slide.active { display: flex; }
+h1, h2 { font-family: var(--display); font-weight: 800; margin: 0; line-height: 1.05; text-wrap: balance; }
+h1 { font-size: 66px; }
+h2 { font-size: 48px; }
+h3 { font-family: var(--display); font-weight: 800; margin: 0 0 6px; font-size: 29px; color: var(--leaf); line-height: 1.08; }
+p { margin: 0; }
+.t24 { font-size: 25px; line-height: 1.3; }
+.sub { font-size: 21px; color: var(--muted); line-height: 1.3; }
+.grid { display: grid; gap: 16px; }
+.g2 { grid-template-columns: 1fr 1fr; }
+.g3 { grid-template-columns: repeat(3, 1fr); }
+.g4 { grid-template-columns: repeat(4, 1fr); }
+.g5 { grid-template-columns: repeat(5, 1fr); }
+.g6 { grid-template-columns: repeat(6, 1fr); }
+.card { background: var(--white); border: 3px solid var(--line); border-radius: 14px; padding: 14px 18px; font-size: 25px; line-height: 1.28; min-width: 0; }
+.card.main { border-color: var(--leaf); background: var(--leaf-soft); }
+.card.hot { border-color: var(--sun); background: #FFFAF0; }
+.num { display: inline-flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; background: var(--leaf); color: #fff; font-family: var(--display); font-weight: 800; font-size: 22px; margin-bottom: 8px; }
+.tag { display: inline-block; font-family: var(--body); font-weight: 700; font-size: 17px; line-height: 1.4; padding: 0 9px; border-radius: 999px; background: var(--sun-soft); color: var(--sun); border: 2px solid var(--sun); vertical-align: middle; white-space: nowrap; }
+.tag.leaf { background: var(--leaf-soft); color: var(--leaf); border-color: var(--leaf); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.chip { background: var(--leaf-soft); border: 2px solid var(--leaf); border-radius: 999px; padding: 1px 12px; font-size: 20px; font-weight: 700; line-height: 1.45; }
+.src { display: block; margin-top: 8px; font-size: 19px; color: var(--muted); line-height: 1.3; }
+.src b { color: var(--leaf); }
+ul.clean { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+ul.clean li { padding-left: 26px; position: relative; }
+ul.clean li::before { content: ""; position: absolute; left: 0; top: 9px; width: 13px; height: 13px; border-radius: 0 60% 0 60%; background: var(--leaf); }
+ul.x li::before { background: var(--sun); border-radius: 3px; }
+
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 24px; line-height: 1.25; background: var(--white); border: 3px solid var(--line); border-radius: 14px; overflow: hidden; }
+th, td { text-align: left; padding: 9px 14px; border-bottom: 2px solid var(--line); vertical-align: top; }
+tr:last-child td { border-bottom: 0; }
+th { font-size: 18px; text-transform: uppercase; letter-spacing: .04em; color: #fff; background: var(--leaf); }
+td.k { font-family: var(--display); font-weight: 800; color: var(--leaf); }
+td.k .sub { font-family: var(--body); font-weight: 400; display: block; font-size: 17px; }
+tr.hot td { background: #FFF5E0; }
+td.c, th.c { text-align: center; }
+td.c { line-height: 1; }
+.dot { display: inline-block; width: 26px; height: 26px; border-radius: 50%; border: 4px solid var(--leaf); vertical-align: middle; }
+.dot.s { background: var(--leaf); }
+.dot.p { background: linear-gradient(90deg, var(--leaf) 50%, #fff 50%); }
+.dot.w { border-color: var(--sun); background: #fff; }
+.legend .dot { width: 20px; height: 20px; border-width: 3px; margin: 0 4px 0 10px; }
+.dot-s { color: var(--leaf); } .dot-p { color: #7C9A8A; } .dot-w { color: var(--sun); }
+
+/* ladder */
+.ladder { display: grid; grid-template-columns: 210px 1fr 150px 1fr; gap: 0 18px; align-items: stretch; }
+.ladder .axis { grid-row: 1 / span 3; display: flex; flex-direction: column; justify-content: space-between; align-items: center; text-align: center; font-size: 19px; font-weight: 700; }
+.ladder .axis .up { color: var(--leaf); }
+.ladder .axis .down { color: var(--sun); }
+.ladder .axis .shaft { flex: 1; width: 10px; margin: 8px 0; border-radius: 5px; background: linear-gradient(var(--leaf), var(--sun)); position: relative; }
+.ladder .axis .shaft::before, .ladder .axis .shaft::after { content: ""; position: absolute; left: 50%; transform: translateX(-50%); border: 14px solid transparent; }
+.ladder .axis .shaft::before { top: -22px; border-bottom-color: var(--leaf); }
+.ladder .axis .shaft::after { bottom: -22px; border-top-color: var(--sun); }
+.ladder .ex { display: flex; align-items: center; justify-content: flex-end; text-align: right; font-size: 22px; padding: 14px 0; }
+.ladder .ex b { font-family: var(--display); font-size: 27px; color: var(--ink); }
+.ladder .rail { position: relative; border-left: 10px solid #6B4B2A; border-right: 10px solid #6B4B2A; display: flex; align-items: center; }
+.ladder .rail::after { content: ""; position: absolute; left: 0; right: 0; top: 50%; height: 12px; margin-top: -6px; background: #8A6538; border-radius: 3px; }
+.ladder .rail span { position: relative; z-index: 1; margin: 0 auto; background: var(--white); border: 3px solid var(--ink); border-radius: 999px; font-weight: 700; font-size: 19px; padding: 2px 12px; }
+.ladder .mine { display: flex; align-items: center; padding: 10px 0; }
+.ladder .mine .card { width: 100%; }
+
+/* spectrum */
+.spectrum { background: var(--white); border: 3px solid var(--line); border-radius: 14px; padding: 14px 20px; }
+.spec-ends { display: flex; justify-content: space-between; font-weight: 700; font-size: 21px; }
+.spec-bar { height: 16px; border-radius: 999px; background: linear-gradient(90deg, var(--leaf), var(--leaf-soft) 50%, var(--sun-soft) 75%, var(--sun)); margin: 8px 0 10px; }
+.spec-marks { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; font-size: 20px; text-align: center; }
+.spec-marks div { border-top: 5px solid var(--leaf); padding-top: 6px; }
+.spec-marks div:nth-child(3) { border-color: #C9A24C; }
+.spec-marks div:nth-child(4) { border-color: var(--sun); }
+
+/* flows */
+.steps { display: grid; gap: 14px; }
+.steps .card { display: flex; flex-direction: column; }
+.ring-row { display: grid; grid-template-columns: 1fr 90px 1fr; align-items: center; gap: 10px; }
+.ring { background: var(--white); border: 3px solid var(--leaf); border-radius: 999px; padding: 12px 18px; text-align: center; font-weight: 700; font-size: 21px; }
+.loop { font-family: var(--display); font-size: 54px; color: var(--leaf); text-align: center; line-height: 1; }
+
+/* dark slides */
+.slide.forest { background: var(--forest); color: #F3FAF5; }
+.slide.forest .card { background: rgba(255,255,255,.07); border-color: #4A8A6C; color: #F3FAF5; }
+.slide.forest h3 { color: var(--sunlit); }
+.slide.forest .sub { color: #C4DFCF; }
+.eyebrow-f { font-size: 20px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--sunlit); }
+.ridge { position: absolute; left: 0; right: 0; bottom: 0; width: 100%; height: 230px; pointer-events: none; }
+.slide.forest > *:not(.ridge) { position: relative; z-index: 1; }
+.thanks { display: inline-block; align-self: flex-start; background: var(--sunlit); color: var(--forest); font-family: var(--display); font-weight: 800; border-radius: 14px; padding: 10px 22px; font-size: 34px; }
+
+/* controls (hidden in exports) */
+.ui { position: absolute; left: 0; right: 0; bottom: 0; height: 64px; display: flex; align-items: center; gap: 12px; padding: 0 28px; background: var(--paper); border-top: 3px solid var(--line); z-index: 3; }
+#stage.dark .ui { background: var(--forest); border-color: #2C5E48; color: #F3FAF5; }
+.ui button { font-family: var(--body); font-weight: 700; font-size: 18px; background: var(--ink); color: #fff; border: 0; border-radius: 10px; padding: 0 18px; height: 44px; cursor: pointer; }
+#stage.dark .ui button { background: var(--sunlit); color: var(--forest); }
+.ui button:focus-visible { outline: 4px solid var(--sunlit); outline-offset: 2px; }
+.ui .hint { font-size: 16px; color: var(--muted); }
+#stage.dark .ui .hint { color: #C4DFCF; }
+.ui .count { margin-left: auto; font-size: 19px; font-weight: 700; font-variant-numeric: tabular-nums; }
+body.export .ui { visibility: hidden; }
+.refs { font-size: 19px; line-height: 1.32; display: grid; gap: 9px; }
+.refs p { padding-left: 34px; text-indent: -34px; }
+.refs a { color: var(--leaf); word-break: break-all; }
+
+/* motion: slides glide in from the direction of travel, their parts rise in one after another */
+@keyframes inFwd { from { opacity: 0; transform: translateX(70px); } to { opacity: 1; transform: none; } }
+@keyframes inBack { from { opacity: 0; transform: translateX(-70px); } to { opacity: 1; transform: none; } }
+@keyframes rise { from { opacity: 0; transform: translateY(22px); } to { opacity: 1; transform: none; } }
+@keyframes pulse { 0%, 100% { box-shadow: 0 0 0 5px rgba(242,193,78,.45); } 50% { box-shadow: 0 0 0 11px rgba(242,193,78,.12); } }
+@keyframes drift { from { transform: translateY(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+#stage { transition: background-color .45s ease; }
+#stage.fwd .slide.active > *:not(aside) { animation: inFwd .55s cubic-bezier(.2,.75,.25,1) backwards; }
+#stage.back .slide.active > *:not(aside) { animation: inBack .55s cubic-bezier(.2,.75,.25,1) backwards; }
+.slide.active > :nth-child(2) { animation-delay: .06s !important; }
+.slide.active > :nth-child(3) { animation-delay: .12s !important; }
+.slide.active > :nth-child(4) { animation-delay: .18s !important; }
+.slide.active > :nth-child(5) { animation-delay: .24s !important; }
+.slide.active .ridge { animation: drift 1s cubic-bezier(.2,.75,.25,1) backwards !important; }
+.slide.active .m { animation: rise .5s cubic-bezier(.2,.75,.25,1) backwards; animation-delay: calc(.25s + var(--i, 0) * 70ms); }
+.camp i { transition: width .4s ease, height .4s ease, background-color .4s ease, border-color .4s ease; }
+.camp em { transition: color .4s ease, font-size .4s ease; }
+.camp.now i { animation: pulse 2.2s ease-in-out infinite; }
+.trail .here span, .trail .here small { transition: opacity .3s ease; }
+.ui button { transition: transform .15s ease, filter .15s ease; }
+.ui button:hover { transform: translateY(-2px); filter: brightness(1.1); }
+.card { transition: transform .2s ease, box-shadow .2s ease; }
+.card:hover { transform: translateY(-3px); box-shadow: 0 8px 22px rgba(12,51,36,.12); }
+
+@keyframes flow { to { stroke-dashoffset: -130; } }
+@keyframes sway { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(-26px); } }
+@keyframes glow { 0%, 100% { opacity: .85; } 50% { opacity: 1; } }
+.trail .route svg polyline { animation: flow 6s linear infinite; }
+.slide.forest .ridge polygon:nth-of-type(1) { animation: sway 14s ease-in-out infinite; }
+.slide.forest .ridge polygon:nth-of-type(2) { animation: sway 20s ease-in-out infinite reverse; }
+.slide.forest .ridge circle { animation: glow 6s ease-in-out infinite; }
+body { transition: background-color .45s ease; }
+body.on-dark { background: #0F3A2A; }
+body.on-light { background: #E3EEE6; }
+body.export *, body.export *::before, body.export *::after, body.export .slide.active .ridge { animation: none !important; transition: none !important; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after, .slide.active .ridge { animation: none !important; transition: none !important; } }
+.chip-lead { font-weight: 700; font-size: 18px; color: var(--muted); align-self: center; text-transform: uppercase; letter-spacing: .04em; }
+.refslide { padding-top: 104px; gap: 10px; }
+.refslide .refs { font-size: 19.5px; line-height: 1.3; gap: 8px; }
+.refslide h2 { font-size: 40px; }
+aside.notes { display: none; }
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage" class="dark">
+
+<header class="trail" aria-label="Where we are in the talk">
+  <div class="here"><small id="hereSmall">Opening</small><span id="hereName">Introduction</span></div>
+  <div class="route">
+    <svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true">
+      <polygon points="0,100 0,88 120,78 230,82 340,64 450,70 560,48 660,56 760,34 860,40 940,18 1000,12 1000,100" fill="#D2EAD9" opacity=".7"/>
+      <polyline points="45,86 145,80 250,75 355,68 460,62 565,53 670,46 775,38 880,30 965,22" fill="none" stroke="#1D7349" stroke-width="2.5" stroke-dasharray="7 6"/>
+    </svg>
+    <div class="camps" id="camps"></div>
+  </div>
+</header>
+
+<!-- 1 COVER -->
+<section class="slide forest" data-sec="0" data-t="26">
+  <p class="eyebrow-f">PLS210 Political Science Research Methods · Research Proposal #2</p>
+  <h1>How do young people in Kazakhstan understand their own capacity to influence environmental policy?</h1>
+  <div class="grid g4" style="max-width:1300px">
+    <div class="card"><h3>Tradition</h3>Interpretivist</div>
+    <div class="card"><h3>Who</h3>Citizens aged 18–35, active and not</div>
+    <div class="card"><h3>Where</h3>Astana · Almaty · Karaganda</div>
+    <div class="card"><h3>When</h3>Dec 2026 – Jun 2027</div>
+  </div>
+  <p class="t24">Research proposal: no data collected yet · Llama Stark · 26 November 2026</p>
+  <svg class="ridge" viewBox="0 0 1600 500" preserveAspectRatio="none" aria-hidden="true">
+    <polygon points="0,500 0,330 200,260 380,320 560,200 760,300 900,240 1100,330 1280,220 1450,300 1600,250 1600,500" fill="#1E4F39"/>
+    <polygon points="0,500 0,410 240,350 420,400 640,320 820,390 1000,340 1200,410 1380,350 1600,400 1600,500" fill="#082419"/>
+  </svg>
+  <aside class="notes">Good morning, everyone. I'm happy to be the last presenter in our section this semester, so thank you for staying with me. My proposal asks: how do young people in Kazakhstan understand their own capacity to influence environmental policy? It is interpretivist, and it is a proposal, so I have not collected any data yet.</aside>
+</section>
+
+<!-- 2 REVISION A -->
+<section class="slide" data-sec="1" data-t="32">
+  <h2>What changed (1/2): question and scope</h2>
+  <table>
+    <thead><tr><th style="width:170px">Element</th><th style="width:330px">Part 1</th><th style="width:400px">Part 2</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr class="hot"><td class="k">Question</td><td>"understand <s>and narrate</s>"</td><td>"understand" only, also in the title and objective 1</td><td>Narrating is about how a story is told; I study meaning</td></tr>
+      <tr class="hot"><td class="k">Young people</td><td>Aged 18–25 (the law says 14–35)</td><td>Citizens of Kazakhstan aged 18–35</td><td>The full adult range of the youth law; allows comparing life stages (E4)</td></tr>
+      <tr class="hot"><td class="k">Place</td><td>"Kazakhstan"</td><td>Astana · Almaty · Karaganda</td><td>Where I have access; all have stable high air pollution</td></tr>
+      <tr class="hot"><td class="k">Time</td><td>Fall 2026</td><td>Dec 2026 – Jun 2027</td><td>Time for immersion and 15–18 interviews</td></tr>
+      <tr><td class="k">Kept</td><td colspan="3">Interpretivist tradition · active <u>and</u> non-active young people · news reports as background only</td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">First, what changed since Part 1. I removed "narrate", because narrating is about how a story is told, and I study meaning. I widened young people from 18–25 to citizens aged 18 to 35, the adult range of the youth law, so I can compare life stages. I replaced "Kazakhstan" with three cities and set the time frame from December to June. The tradition stays interpretivist.</aside>
+</section>
+
+<!-- 3 REVISION B -->
+<section class="slide" data-sec="1" data-t="27">
+  <h2>What changed (2/2): framework and design</h2>
+  <table>
+    <thead><tr><th style="width:170px">Element</th><th style="width:330px">Part 1</th><th style="width:400px">Part 2</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr class="hot"><td class="k">E1</td><td>"Young people will say their capacity is insignificant"</td><td>Two or more camps, partly because "influence" means different things</td><td>My own review found every study defines influence differently</td></tr>
+      <tr class="hot"><td class="k">E4 <span class="tag">new</span></td><td>None</td><td>Understandings differ by life stage and experience</td><td>The wider age range makes this visible</td></tr>
+      <tr><td class="k">Logic</td><td>Inductive</td><td>Abductive: between expectations and surprises</td><td>Lets me use expectations without being bound by them</td></tr>
+      <tr><td class="k">Positionality</td><td>Partly an insider; two risks</td><td>Insider–outsider spectrum, my starting view, an immersion plan</td><td>Instructor feedback: show immersion</td></tr>
+      <tr><td class="k">Concepts</td><td>Only "young people" scoped</td><td>Four concepts defined, laddered, assessed</td><td>Clear concepts guide who and what I study</td></tr>
+      <tr><td class="k">Methods</td><td>"Open conversations"</td><td>Semi-structured interviews, participant observation, public online comments</td><td>Instructor feedback: name the exact instrument</td></tr>
+      <tr><td class="k">Kept</td><td colspan="3">The four-part lens · E2 and E3 · safeguards: ask what "influence" means first, include non-active people</td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">In the framework, my Part 1 E1 said young people would call their capacity insignificant. But my own review showed that every study defines influence differently, so I now expect two or more camps. I added E4 on life stage, moved from inductive to abductive logic, added an immersion plan, defined my concepts, and named my methods.</aside>
+</section>
+
+<!-- 3 LENS + EXPECTATIONS -->
+<section class="slide" data-sec="2" data-t="41">
+  <h2>My lens points to four expectations</h2>
+  <div class="grid g4">
+    <div class="card"><h3>Civic duty</h3><span class="src">Gerfanova et al. 2025</span></div>
+    <div class="card"><h3>Emotions</h3><span class="src">Hockey 2025; Šerek et al. 2026</span></div>
+    <div class="card"><h3>Being taken seriously</h3><span class="src">Collins 2021; Hwang 2026</span></div>
+    <div class="card"><h3>Doing it ourselves</h3><span class="src">Sloam, Pickard &amp; Henn 2022</span></div>
+  </div>
+  <table>
+    <thead><tr><th style="width:190px">Expectation</th><th>I expect…</th><th style="width:400px">What would challenge it</th></tr></thead>
+    <tbody>
+      <tr class="hot"><td class="k">E1 <span class="tag">revised</span></td><td>Two or more camps (can / cannot), partly because "influence" means different things. Reasons: nobody listens · too dangerous · never thought about it</td><td>Everyone shares one meaning</td></tr>
+      <tr><td class="k">E2</td><td>Being dismissed is described in two opposite ways <span class="sub">(Šerek; Hwang; Hockey)</span></td><td>Dismissal never comes up</td></tr>
+      <tr><td class="k">E3</td><td>Influence is placed away from state institutions <span class="sub">(Sloam et al.; Boulianne &amp; Ohme)</span></td><td>Most named hearings or petitions first</td></tr>
+      <tr class="hot"><td class="k">E4 <span class="tag">new</span></td><td>Understandings differ by life stage and experience <span class="sub">(my own reasoning)</span></td><td>No difference by life stage</td></tr>
+      <tr><td class="k">Rival</td><td>"Cannot influence" is general distrust of politics, not a view about environmental policy</td><td>People talk about environmental decisions differently from politics in general</td></tr>
+    </tbody>
+  </table>
+  <p class="sub"><b>Gap:</b> these studies look at activists outside Kazakhstan (Australia, Czechia, South Korea) or at Kazakhstani adolescents' civic identity; none asks young adults in Kazakhstan what "influence" means to them. The lens shows where to look; it does not predict.</p>
+  <aside class="notes">My lens has four entry points from the literature: civic duty, emotions, being taken seriously, and doing it ourselves. They show me where to look, not what I will find. So I expect two or more camps; dismissal described in two opposite ways; influence placed away from state institutions; and differences by life stage. I also keep a rival reading open: "cannot influence" may simply be distrust of politics. The gap: no study I reviewed asks young adults in Kazakhstan what influence means to them.</aside>
+</section>
+
+<!-- 4 POSITIONALITY -->
+<section class="slide" data-sec="2" data-t="37">
+  <h2>Positionality: where I start from</h2>
+  <div class="grid g2">
+    <div class="card main"><h3>Who I am</h3>A young Kazakhstani environmental activist: educational posts, eco NGOs, ploggings and clean-ups, teaching children and adults, LCOY youth conferences. I still volunteer.</div>
+    <div class="card hot"><h3>My starting view (horizon)</h3>Young people can influence policy <b>only if many join and it is well justified</b>. I will write it down and check it against theirs.</div>
+  </div>
+  <div class="spectrum">
+    <div class="spec-ends"><span>Closer to insider</span><span>Closer to outsider</span></div>
+    <div class="spec-bar"></div>
+    <div class="spec-marks"><div>Active young people in my own networks</div><div>Active young people I don't know</div><div>Occasional participants</div><div>Young people who don't take part</div></div>
+  </div>
+  <p class="sub">My position is not a bias to remove but a condition of knowing that I account for. People may read me as local or not, linked to the state or not, a risk or safe, and in Kazakhstan this can shape what they say.</p>
+  <div class="grid g3">
+    <div class="card"><h3>Possible risk</h3>I might hear my own frustrations echoed back</div>
+    <div class="card"><h3>Possible risk</h3>Non-active people may give the answers they think an activist expects</div>
+    <div class="card main"><h3>Safeguards</h3>Ask what "influence" means first · include non-active people · memo my reactions</div>
+  </div>
+  <aside class="notes">I am not neutral. I am a young Kazakhstani environmental activist, from educational posts and clean-ups to [LCOY in full] conferences. My starting view is that influence needs many people and good justification. That is my horizon, and I will check it against theirs. Insider and outsider is a spectrum: closer to insider with active young people, closer to outsider with those who don't take part. So I will ask what influence means first and memo my reactions.</aside>
+</section>
+
+<!-- 5 DEFINITIONS -->
+<section class="slide" data-sec="3" data-t="30">
+  <h2>Concepts: starting definitions and their attributes</h2>
+  <div class="grid g2">
+    <div class="card"><h3>Young people</h3>Citizens of Kazakhstan aged 18–35
+      <div class="chips"><span class="chip-lead">Attributes:</span><span class="chip">citizen</span><span class="chip">aged 18–35</span></div>
+      <span class="src"><b>Adapted from</b> the Law on State Youth Policy (2015), which says 14–35. Starting at 18 and citizens only are my choices.</span></div>
+    <div class="card"><h3>Environmental policy</h3>Principles, objectives and decisions that public authorities adopt about protecting or using nature, binding or not
+      <div class="chips"><span class="chip-lead">Attributes:</span><span class="chip">public authority</span><span class="chip">any level</span><span class="chip">about nature</span><span class="chip">binding or not</span></div>
+      <span class="src"><b>Adapted from</b> the InforMEA glossary (UN Environment Programme) and the Environmental Code (2021)</span></div>
+    <div class="card main"><h3>Capacity to influence <span class="tag leaf">core concept</span></h3>The ability and opportunities, as people understand them, to affect authorities' decisions on environmental policy
+      <div class="chips"><span class="chip-lead">Attributes:</span><span class="chip">ability</span><span class="chip">opportunities</span><span class="chip">as they see it</span><span class="chip">authorities' decisions</span></div>
+      <span class="src"><b>My definition.</b> Authorities = state bodies at national, regional or local level.</span></div>
+    <div class="card hot"><h3>Environmental activism <span class="tag">weakest</span></h3>Taking part in or organizing events or campaigns for environmental change, online or offline, more than once
+      <div class="chips"><span class="chip-lead">Attributes:</span><span class="chip">takes part or organizes</span><span class="chip">online or offline</span><span class="chip">more than once</span></div>
+      <span class="src"><b>My definition.</b> Borderline cases: people describe themselves.</span></div>
+  </div>
+  <p class="sub">Attributes = the defining features of a concept (its intension). These definitions set my scope; participants' own meanings will be the finding.</p>
+  <aside class="notes">These are starting definitions that set my scope; participants' own meanings will be the finding. Young people: citizens aged 18 to 35 [citizens because ___]. Environmental policy: decisions authorities adopt about protecting or using nature, at any level. My core concept, capacity to influence: the ability and opportunities, as people understand them, to affect those decisions. The labels show each concept's attributes.</aside>
+</section>
+
+<!-- 6 LADDER -->
+<section class="slide" data-sec="3" data-t="19">
+  <h2>Ladder of abstraction (Sartori, 1970): where my concepts sit</h2>
+  <div class="ladder">
+    <div class="axis"><span class="up">BROADER<br>more cases,<br>fewer attributes</span><div class="shaft"></div><span class="down">NARROWER<br>more attributes,<br>fewer cases</span></div>
+    <div class="ex"><div><span class="sub">Example</span><br><b>Public policy</b></div></div>
+    <div class="rail"><span>High</span></div>
+    <div class="mine"><div class="card">Political participation, citizens <span class="sub">(too broad for my question)</span></div></div>
+    <div class="ex"><div><span class="sub">Example</span><br><b>Environmental policy</b><br><span class="sub">policy (genus) + about nature (difference)</span></div></div>
+    <div class="rail"><span>Middle</span></div>
+    <div class="mine"><div class="card main"><b>Young people · Environmental policy · Environmental activism</b></div></div>
+    <div class="ex"><div><span class="sub">Example</span><br><b>One city's air-quality decision</b></div></div>
+    <div class="rail"><span>Low</span></div>
+    <div class="mine"><div class="card main"><b>Capacity to influence environmental policy</b><br><span class="sub">one field, one country, as people see it. Illustration, not data: "If enough of us sign, the akimat has to answer."</span></div></div>
+  </div>
+  <div class="card hot"><b>Why capacity stays low:</b> pushing it up to "influence in politics" would stretch it into general political efficacy (conceptual stretching).</div>
+  <aside class="notes">On Sartori's ladder, going up means more cases and fewer attributes. Three concepts sit in the middle; environmental policy is policy plus "about nature". Capacity sits low on purpose: moving it up would stretch it into general political efficacy.</aside>
+</section>
+
+<!-- 7 QUALITY OF DEFINITIONS -->
+<section class="slide" data-sec="3" data-t="16">
+  <h2>Quality of definitions: four of Gerring's (1999) criteria</h2>
+  <table>
+    <thead><tr><th>Criterion · what it asks</th><th class="c">Young people</th><th class="c">Env. policy</th><th class="c">Capacity</th><th class="c">Activism</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Resonance<span class="sub">does the term ring (resonate)?</span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot p" title="partly"></span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td></tr>
+      <tr><td class="k">Coherence<span class="sub">are the attributes logically related?</span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot p" title="partly"></span></td></tr>
+      <tr class="hot"><td class="k">Differentiation<span class="sub">distinct from the most similar concepts, bounded?</span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot w" title="weak"></span></td><td class="c"><span class="dot w" title="weak"></span></td></tr>
+      <tr><td class="k">Field utility<span class="sub">useful among related concepts?</span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot p" title="partly"></span></td><td class="c"><span class="dot p" title="partly"></span></td></tr>
+    </tbody>
+  </table>
+  <div class="grid g2">
+    <div class="card hot"><b>Capacity vs political efficacy:</b> efficacy is a general belief about politics; mine is about environmental policy and includes opportunities.</div>
+    <div class="card hot"><b>Activism vs everyday consumer choices:</b> no clear cut-off, so I will ask people how they describe themselves.</div>
+  </div>
+  <p class="sub legend"><span class="dot s"></span>strong <span class="dot p"></span>partly <span class="dot w"></span>weak · my assessment. Strongest: young people. Weakest: activism.</p>
+  <aside class="notes">On four of Gerring's criteria, young people is strongest. My weak point is differentiation: capacity is close to political efficacy, and activism has no clear line from consumer choices, so borderline cases describe themselves.</aside>
+</section>
+
+<!-- 8 INTERPRETATION STRATEGY -->
+<section class="slide" data-sec="4" data-t="27">
+  <h2>Interpretation strategy: what counts as evidence, and how I read it</h2>
+  <p class="t24">Interpretation = an account of what something means, for whom, and in which context.</p>
+  <div class="grid g5">
+    <div class="card"><h3>Words</h3>What "influence", "policy", "authorities" mean to them</div>
+    <div class="card"><h3>Manner</h3>Jokes, hesitation, irony</div>
+    <div class="card"><h3>Practice</h3>What they do at events</div>
+    <div class="card hot"><h3>Silences</h3>What they avoid saying</div>
+    <div class="card"><h3>Relation</h3>How they react to me</div>
+  </div>
+  <div class="grid g3">
+    <div class="card main"><h3>Object</h3>What I interpret: participants' meanings and shared ways of talking</div>
+    <div class="card main"><h3>Operation</h3>How: reconstruct their meaning, then clarify contradictions</div>
+    <div class="card main"><h3>Scope</h3>How far: all understanding is interpretation, mine too</div>
+  </div>
+  <p class="t24" style="margin-bottom:-6px"><b>Hermeneutic circle:</b></p>
+  <div class="ring-row">
+    <div class="ring">One statement · my starting view</div>
+    <div class="loop" aria-hidden="true">⇄</div>
+    <div class="ring">The whole interview · their view</div>
+  </div>
+  <aside class="notes">Interpretation is an account of what something means, for whom, and in which context. My evidence is what people say influence means, how they say it, what they do, their silences, and how they react to me. I will move in the hermeneutic circle, between each statement and the whole interview, and between my view and theirs.</aside>
+</section>
+
+<!-- 9 QUALITY STANDARDS -->
+<section class="slide" data-sec="4" data-t="12">
+  <h2>How I make sure my interpretation is trustworthy</h2>
+  <table>
+    <thead><tr><th style="width:330px">Standard</th><th>How I meet it</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Thick description</td><td>Record the context of every account: place, setting, who was there</td></tr>
+      <tr><td class="k">Reflexivity</td><td>A positionality memo after every interview and event</td></tr>
+      <tr><td class="k">Triangulation</td><td>Compare what people say (interviews) with what they do (events) and write (online)</td></tr>
+      <tr><td class="k">Member checking</td><td>Participants may comment on a short summary of their own interview (optional)</td></tr>
+      <tr><td class="k">Negative case analysis</td><td>Search for accounts that break E1–E4</td></tr>
+      <tr><td class="k">Audit trail</td><td>Log every choice: who, where, which platforms, any change</td></tr>
+    </tbody>
+  </table>
+  <p class="sub">Interpretivism judges trustworthiness, not validity and replicability.</p>
+  <aside class="notes">To make my interpretation trustworthy, I will use six standards: thick description, reflexive memos, triangulation, member checking, negative cases and an audit trail.</aside>
+</section>
+
+<!-- 10 METHODS -->
+<section class="slide" data-sec="5" data-t="24">
+  <h2>Methods: how I will collect evidence</h2>
+  <div class="grid g2">
+    <div class="card main"><h3>Chosen</h3>
+      <ul class="clean">
+        <li><b>Semi-structured interviews</b>: the main instrument</li>
+        <li><b>Participant observation</b> at environmental events in Astana</li>
+        <li><b>Public online comments</b> under environmental posts</li>
+        <li><b>Documents</b>: context only</li>
+      </ul></div>
+    <div class="card"><h3>Not chosen, and why</h3>
+      <ul class="clean x">
+        <li><b>Focus groups</b>: group talk would shape each person's meaning of "influence"</li>
+        <li><b>Narrative analysis</b>: I study understanding, not how stories are told</li>
+      </ul></div>
+  </div>
+  <div class="card hot"><h3>Why semi-structured?</h3>Everyone gets the same core questions, so answers can be compared, but the order is flexible and I follow up on what each person says. A structured survey would force my categories on them.</div>
+  <aside class="notes">My main instrument is semi-structured interviews: everyone gets the same core questions, but the order is flexible and I follow up on what each person says. I add participant observation in Astana and public online comments. I chose not to use focus groups, because group talk would shape each person's meaning.</aside>
+</section>
+
+<!-- 10b INTERVIEW GUIDE -->
+<section class="slide" data-sec="5" data-t="23">
+  <h2>Interview guide: example questions</h2>
+  <div class="steps g2">
+    <div class="card main"><span class="num">1</span><p>"When you hear influence on environmental decisions, what comes to mind?"</p></div>
+    <div class="card"><span class="num">2</span><p>"Who makes decisions about the environment in your city?"</p></div>
+    <div class="card"><span class="num">3</span><p>"Can young people like you affect those decisions? Why, or why not?"</p></div>
+    <div class="card"><span class="num">4</span><p>"Have you, or someone you know, tried? What happened?"</p></div>
+    <div class="card"><span class="num">5</span><p>"Where do you see people trying to make a difference: offline, online?"</p></div>
+    <div class="card"><span class="num">6</span><p>"Has your view changed over the years? What changed it?"</p></div>
+  </div>
+  <p class="t24"><b>Follow-up probes:</b> "Can you give an example?" · "What do you mean by…?" · 45–60 min, in Kazakh, Russian or English</p>
+  <aside class="notes">For example, I will ask: when you hear influence on environmental decisions, what comes to mind? Who makes those decisions in your city? Can young people like you affect them? And has your view changed over the years? Then I follow up: can you give an example?</aside>
+</section>
+
+<!-- 11 DATA COLLECTION -->
+<section class="slide" data-sec="5" data-t="24">
+  <h2>How I collect the data, step by step</h2>
+  <div class="steps g3">
+    <div class="card"><span class="num">1</span><h3>Invite</h3>Friends, relatives, classes and workplaces pass on a short invitation about "young people and environmental decisions"</div>
+    <div class="card"><span class="num">2</span><h3>Consent</h3>An information sheet, then written consent before any recording</div>
+    <div class="card main"><span class="num">3</span><h3>Interview</h3>45–60 min, participant's language, in person (Astana, Karaganda) or online (Almaty). Recorded with permission</div>
+    <div class="card"><span class="num">4</span><h3>Observe</h3>6–8 events in Astana, Dec–Jun. Field notes after each, no names</div>
+    <div class="card"><span class="num">5</span><h3>Online</h3>For four weeks, read public comments under environmental posts and note how people talk about influence. No usernames</div>
+    <div class="card"><span class="num">6</span><h3>Store</h3>Pseudonyms, encrypted files, key kept apart. Nothing pasted into AI tools</div>
+  </div>
+  <aside class="notes">Step by step: an invitation goes out through friends and groups outside environmental circles; each person reads an information sheet and consents; interviews last 45 to 60 minutes in their language; I observe six to eight Astana events; I note public comments for four weeks; and everything is stored under pseudonyms.</aside>
+</section>
+
+<!-- 12 IMMERSION + SENSIBILITY -->
+<section class="slide" data-sec="5" data-t="23">
+  <h2>Immersion and sensibility: two sides of one plan</h2>
+  <div class="grid g2">
+    <div class="card main"><h3>Immersion = being there</h3>
+      <ul class="clean">
+        <li>Astana, Dec 2026 – Jun 2027, 6–8 events: clean-ups and ploggings, tree planting, eco workshops, youth environmental conferences, public hearings if open</li>
+        <li>I will take part as a volunteer, not only watch</li>
+        <li>Organizers know I am researching</li>
+        <li>Field notes and a memo after every event</li>
+      </ul></div>
+    <div class="card"><h3>Sensibility = how I pay attention</h3>
+      <ul class="clean">
+        <li>What people take for granted</li>
+        <li>How they talk about authorities; who is absent; silences</li>
+        <li>Links between everyday practice and policy or power</li>
+        <li>I will ask "what do you mean?"</li>
+      </ul></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h3>Nearest possible locale</h3>In person in Astana, and Karaganda if a trip is feasible. Almaty online, named as a limitation.</div>
+    <div class="card hot"><h3>What stays hidden, who stays silent</h3>Private talk, and people who never come to events. I reach them through interviews with non-active people.</div>
+  </div>
+  <aside class="notes">Immersion is being there: I will volunteer at Astana clean-ups, tree plantings, eco workshops and youth conferences, with organisers aware of my research. Sensibility is how I pay attention: to what is taken for granted, and to silences. People who never come to events, I reach through interviews.</aside>
+</section>
+
+<!-- 13 SAMPLING -->
+<section class="slide" data-sec="5" data-t="25">
+  <h2>Who I talk to, and why these three cities</h2>
+  <table>
+    <thead><tr><th style="width:170px">City</th><th style="width:120px">Interviews</th><th>Why this city</th><th>Ground of access</th></tr></thead>
+    <tbody>
+      <tr><td class="k">Astana</td><td>5–6</td><td>I live here and have taken part mostly in Astana's environmental events</td><td>My own networks and events</td></tr>
+      <tr><td class="k">Almaty</td><td>5–6</td><td>Active environmental participation online and offline (my experience)</td><td>Relatives, friends, teachers as bridges</td></tr>
+      <tr><td class="k">Karaganda</td><td>5–6</td><td>Different regional context from the two largest cities</td><td>Friends and acquaintances as bridges</td></tr>
+    </tbody>
+  </table>
+  <div class="card main"><b>All three are among Kazakhstan's most polluted cities:</b> Kazhydromet names Astana, Karaganda and Almaty among cities with a stable high level of air pollution in 2021–2025.
+    <span class="src"><b>Source:</b> Kazhydromet, Information Bulletin on the State of the Environment of the Republic of Kazakhstan, July 2025, pp. 4–5 · <a href="https://www.gov.kz/uploads/2025/9/12/3b3eb9c0bd68f14d8896806fd3b6aea2_original.1626170.pdf" style="color:inherit">gov.kz</a></span></div>
+  <div class="grid g3">
+    <div class="card"><h3>15–18 · at least 12</h3>Justified by depth. Changes logged in the audit trail.</div>
+    <div class="card"><h3>Mix</h3>Active · occasional · non-active (2–3 per city) · varied age and role</div>
+    <div class="card"><h3>Bridges only</h3>Friends never take part and never learn who did</div>
+  </div>
+  <aside class="notes">I plan 15 to 18 interviews, at least 12. Astana is where I live and take part in events, Almaty has active participation online and offline, and Kazhydromet lists all three cities among those with stable high air pollution. Friends are only bridges, and each city has two or three non-active participants.</aside>
+</section>
+
+<!-- 14 ANALYSIS -->
+<section class="slide" data-sec="5" data-t="15">
+  <h2>How I analyse and interpret the data</h2>
+  <div class="steps g3">
+    <div class="card"><span class="num">1</span><h3>Transcribe</h3>I will transcribe and translate myself. Translation is interpretation, so I note it</div>
+    <div class="card"><span class="num">2</span><h3>Code with memos</h3>Interpretive coding: label what each passage is about, memo my reading</div>
+    <div class="card"><span class="num">3</span><h3>Trace key words</h3>Conceptual elucidation: how people use "influence" and "authorities"</div>
+    <div class="card"><span class="num">4</span><h3>Compare</h3>Active vs non-active · three cities · life stages (E4)</div>
+    <div class="card hot"><span class="num">5</span><h3>Test against cases</h3>Look for negative cases that break E1–E4</div>
+    <div class="card main"><span class="num">6</span><h3>Write</h3>Thick description and plausible conjectures</div>
+  </div>
+  <p class="sub">Throughout: the hermeneutic circle, moving between each statement and the whole.</p>
+  <aside class="notes">To analyse, I will transcribe and translate myself, code with memos, trace how people use "influence", compare groups and life stages, test negative cases, and write thick description and plausible conjectures.</aside>
+</section>
+
+<!-- 15 LEVEL + EVIDENCE -->
+<section class="slide" data-sec="6" data-t="13">
+  <h2>Data and evidence: what I will observe, and what it serves</h2>
+  <div class="grid" style="grid-template-columns: 1.3fr 1fr; align-items:start">
+    <table>
+      <thead><tr><th colspan="2">Organizing the data collection</th></tr></thead>
+      <tbody>
+        <tr><td class="k">Level of analysis</td><td>Individual</td></tr>
+        <tr><td class="k">Locus · scale</td><td>Three cities · local, cross-level, co-constructed</td></tr>
+        <tr><td class="k">Sites</td><td>Events, interviews · Dec–Jun · 4-week online window</td></tr>
+        <tr><td class="k">Observations</td><td>Meanings, practices, interactions, texts, silences</td></tr>
+        <tr><td class="k">Evidence</td><td>Notes and transcripts, turned into evidence by interpretation</td></tr>
+      </tbody>
+    </table>
+    <div style="display:grid;gap:10px"><table>
+      <thead><tr><th>Expectation</th><th class="c">Interviews</th><th class="c">Observation</th><th class="c">Online</th></tr></thead>
+      <tbody>
+        <tr><td class="k">E1 · camps</td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td></tr>
+        <tr><td class="k">E2 · dismissal</td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot p" title="partly"></span></td><td class="c"><span class="dot p" title="partly"></span></td></tr>
+        <tr><td class="k">E3 · away from state</td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot s" title="strong"></span></td></tr>
+        <tr class="hot"><td class="k">E4 · life stage</td><td class="c"><span class="dot s" title="strong"></span></td><td class="c"><span class="dot w" title="weak"></span></td><td class="c"><span class="dot w" title="weak"></span></td></tr>
+      </tbody>
+    </table><p class="sub legend"><span class="dot s"></span>main evidence <span class="dot p"></span>supporting <span class="dot w"></span>none · E4 rests on interviews alone: my most tentative. Documents give context.</p></div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h3>Interviews</h3>Richest, but shaped by how people read me, so I memo</div>
+    <div class="card"><h3>Online comments</h3>Cannot show age or city: context only</div>
+    <div class="card hot"><h3>Missing voices</h3>People who refuse or never come: named openly as a limit</div>
+  </div>
+  <aside class="notes">My level of analysis is the individual, and my observations become evidence only through interpretation. E4 rests on interviews alone, so it is my most tentative expectation.</aside>
+</section>
+
+<!-- 16 ETHICS -->
+<section class="slide" data-sec="7" data-t="21">
+  <h2>Ethics: each risk, and how I will reduce it</h2>
+  <p class="t24"><span class="tag">Risk level: above minimal</span> Harm is unlikely, but being identified could be serious for a few people.</p>
+  <table>
+    <thead><tr><th style="width:330px">Risk</th><th>How I will reduce it</th><th style="width:260px">Principle</th></tr></thead>
+    <tbody>
+      <tr class="hot"><td class="k">Being identified</td><td>Only coarse background (age band, city, student or worker) · pseudonyms · key kept apart · audio deleted after transcription</td><td>Beneficence</td></tr>
+      <tr><td class="k">Pressure to take part</td><td>Informed, voluntary consent · withdraw any time, no penalty · friends never learn who took part</td><td>Respect for persons</td></tr>
+      <tr><td class="k">Discomfort, eco-anxiety</td><td>Skip any question · pause or stop any time · support contact · no names of private people</td><td>Beneficence</td></tr>
+      <tr><td class="k">Conflict of interest</td><td>No funding · I disclose my activism to participants and readers</td><td>Disclosure</td></tr>
+      <tr><td class="k">Speaking for others</td><td>Report meanings in participants' own words · mark my interpretations as mine</td><td>Respect for persons</td></tr>
+      <tr><td class="k">Unheard groups</td><td>Active and non-active people, three cities, choice of language</td><td>Justice</td></tr>
+      <tr><td class="k">Data leaving my control</td><td>Public posts only, no usernames · encrypted files with a backup copy · nothing pasted into AI tools</td><td>Course AI rule</td></tr>
+    </tbody>
+  </table>
+  <p class="sub">Belmont principles. Ethics is ongoing: memos during fieldwork, review before it starts. Participants get a short summary of results.</p>
+  <aside class="notes">The risk is above minimal: harm is unlikely, but being identified could be serious for a few. So I will collect only coarse background, use pseudonyms, ask for voluntary consent, disclose my activism, offer a support contact, and never paste interview data into AI.</aside>
+</section>
+
+<!-- 17 LIMITATIONS -->
+<section class="slide" data-sec="8" data-t="12">
+  <h2>Limitations: what my conclusions cannot show</h2>
+  <table>
+    <thead><tr><th style="width:330px">Limit</th><th>What it means</th><th>How I handle it</th></tr></thead>
+    <tbody>
+      <tr><td class="k">No frequency or cause</td><td>Cannot say how common a view is, or why</td><td>Claims stay about meaning, for these people</td></tr>
+      <tr><td class="k">Big cities only</td><td>Towns and villages are not heard</td><td>Named as a next step</td></tr>
+      <tr><td class="k">Network recruiting</td><td>May reach similar people</td><td>Routes outside environmental circles</td></tr>
+      <tr class="hot"><td class="k">Small non-active group</td><td>About 6–9 people</td><td>Tentative claims; add non-active first</td></tr>
+      <tr><td class="k">My position</td><td>My view may echo back</td><td>Memos and negative cases</td></tr>
+      <tr><td class="k">Online interviews</td><td>I cannot see the setting</td><td>Note it in memos; in person where possible</td></tr>
+      <tr><td class="k">Immersion</td><td>Deep in Astana only</td><td>No depth claims for other cities</td></tr>
+    </tbody>
+  </table>
+  <aside class="notes">This design cannot show how common a view is or what causes it. It covers big cities only, and the non-active group is small.</aside>
+</section>
+
+<!-- 18 CONTRIBUTION -->
+<section class="slide" data-sec="9" data-t="14">
+  <h2>Contribution</h2>
+  <div class="grid g3">
+    <div class="card main"><span class="num">1</span><h3>Empirical</h3>Studies young adults in Kazakhstan; the studies I reviewed were based abroad or on Kazakhstani adolescents</div>
+    <div class="card main"><span class="num">2</span><h3>Methodological</h3>Listens to young people who do not act, not only to eco-activists</div>
+    <div class="card main"><span class="num">3</span><h3>Conceptual</h3>Treats capacity to influence as a meaning young people construct, not a score</div>
+  </div>
+  <aside class="notes">It contributes empirically, by studying young adults in Kazakhstan; methodologically, by listening to non-active young people, not only eco-activists; and conceptually, by treating capacity as a meaning, not a score.</aside>
+</section>
+
+<!-- 19 AI + THANKS -->
+<section class="slide forest" data-sec="9" data-t="30">
+  <p class="eyebrow-f">AI transparency statement</p>
+  <h2>My choices, with AI as a learning partner</h2>
+  <div class="grid g2" style="max-width:1400px">
+    <div class="card"><h3>I decided</h3>Every point of the proposal: question, tradition, expectations, concepts, methods, cities, sample, ethics, positionality. I found and read all the literature myself.</div>
+    <div class="card"><h3>I used Claude to check</h3>
+      <ul class="clean">
+        <li>explain course terms and check my understanding</li>
+        <li>state my ideas shorter and clearer</li>
+        <li>check my ethics and whether the plan is realistic</li>
+        <li>suggest wording, which I reviewed and edited</li>
+        <li>build this web presentation</li>
+      </ul></div>
+  </div>
+  <p class="thanks">Thank you · questions welcome</p>
+  <svg class="ridge" viewBox="0 0 1600 500" preserveAspectRatio="none" aria-hidden="true" style="height:150px">
+    <polygon points="0,500 0,380 220,320 420,370 640,280 820,360 1000,310 1200,390 1380,320 1600,370 1600,500" fill="#082419"/>
+  </svg>
+  <aside class="notes">I decided every point of this proposal and found and read all the literature myself. I used Claude to check: to explain terms, check my understanding, state ideas more clearly, check my ethics and realism, suggest wording I edited, and build this web presentation. So, who decides what influence means? I will ask young people themselves. Thank you, I'm happy to take questions.</aside>
+</section>
+
+
+<!-- 20 REFERENCES -->
+<section class="slide refslide" data-sec="9" data-t="0" data-name="References">
+  <h2>References</h2>
+  <div class="refs">
+    <p>Boulianne, S., &amp; Ohme, J. (2022). Pathways to environmental activism in four countries: Social media, environmental concern, and political efficacy. <i>Journal of Youth Studies, 25</i>(6), 771–792. <a href="https://doi.org/10.1080/13676261.2021.2011845">https://doi.org/10.1080/13676261.2021.2011845</a></p>
+    <p>Collins, R. (2021). Great games and keeping it cool: New political, social and cultural geographies of young people's environmental activism. <i>Children's Geographies, 19</i>(3), 332–338. <a href="https://doi.org/10.1080/14733285.2020.1853677">https://doi.org/10.1080/14733285.2020.1853677</a></p>
+    <p>Environmental Code of the Republic of Kazakhstan No. 400-VI. (2021). <a href="https://adilet.zan.kz/eng/docs/K2100000400">https://adilet.zan.kz/eng/docs/K2100000400</a></p>
+    <p>Gerfanova, E., Rudik, Z., &amp; Nemchenko, N. (2025). Exploring the multidimensional civic identity of adolescents in Kazakhstan. <i>Journal of Culture and Values in Education, 8</i>(3), 284–316. <a href="https://doi.org/10.46303/jcve.2025.36">https://doi.org/10.46303/jcve.2025.36</a></p>
+    <p>Hockey, J. A. (2025). When private meets public: Young people and political consumerism in the name of environmental activism. <i>Journal of Youth Studies, 28</i>(9), 1440–1457. <a href="https://doi.org/10.1080/13676261.2024.2370275">https://doi.org/10.1080/13676261.2024.2370275</a></p>
+    <p>Hwang, S. (2026). Supporting youth participation and action in climate change: Rhetoric of policy and actuality in schools, youth centers, and youth activism. <i>Environmental Education Research, 32</i>(5), 1260–1274. <a href="https://doi.org/10.1080/13504622.2025.2488384">https://doi.org/10.1080/13504622.2025.2488384</a></p>
+    <p>InforMEA. (n.d.). Environmental policy. In <i>InforMEA glossary</i>. United Nations Environment Programme. Retrieved November 26, 2026, from <a href="https://www.informea.org/en/knowledge/glossary/environmental-policy">https://www.informea.org/en/knowledge/glossary/environmental-policy</a></p>
+    <p>Kazhydromet. (2025). <i>Informatsionnyi byulleten' o sostoyanii okruzhayushchei sredy Respubliki Kazakhstan: Iyul' 2025</i> [Information bulletin on the state of the environment of the Republic of Kazakhstan: July 2025]. Ministry of Ecology and Natural Resources of the Republic of Kazakhstan. <a href="https://www.gov.kz/uploads/2025/9/12/3b3eb9c0bd68f14d8896806fd3b6aea2_original.1626170.pdf">https://www.gov.kz/uploads/2025/9/12/3b3eb9c0bd68f14d8896806fd3b6aea2_original.1626170.pdf</a></p>
+    <p>Law of the Republic of Kazakhstan No. 285-V on State Youth Policy. (2015). <a href="https://adilet.zan.kz/eng/docs/Z1500000285">https://adilet.zan.kz/eng/docs/Z1500000285</a></p>
+    <p>Šerek, J., Seryjová Juhová, D., Mužík, M., Brojáč, J., Scott, Z., &amp; Farkač, B. (2026). The mobilizing power of (dis)respect: How politicians' responses influence youth pro-environmental activism. <i>Environment and Behavior, 58</i>(6), 930–963. <a href="https://doi.org/10.1177/00139165261443103">https://doi.org/10.1177/00139165261443103</a></p>
+    <p>Sloam, J., Pickard, S., &amp; Henn, M. (2022). Young people and environmental activism: The transformation of democratic politics. <i>Journal of Youth Studies, 25</i>(6), 683–691. <a href="https://doi.org/10.1080/13676261.2022.2056678">https://doi.org/10.1080/13676261.2022.2056678</a></p>
+  </div>
+  <aside class="notes">References (not presented aloud).</aside>
+</section>
+
+<nav class="ui" aria-label="Slide controls">
+  <button id="prev" type="button" aria-label="Previous slide">← Back</button>
+  <button id="next" type="button" aria-label="Next slide">Next →</button>
+  <span class="hint">Arrow keys · F for full screen</span>
+  <span class="count" id="count">1 / 22</span>
+</nav>
+
+</div></div>
+
+<script>
+(function () {
+  var SEC = ["Introduction", "Revision", "Analytical framework", "Concepts", "Interpretation strategy", "Design and methods", "Data and evidence", "Ethics", "Limitations", "Contribution and AI"];
+  var SHORT = ["Start", "Revision", "Framework", "Concepts", "Interpretation", "Methods", "Evidence", "Ethics", "Limits", "Close"];
+  var stage = document.getElementById('stage');
+  var slides = Array.prototype.slice.call(document.querySelectorAll('.slide'));
+  var camps = document.getElementById('camps');
+  SHORT.forEach(function (n, k) {
+    var c = document.createElement('div'); c.className = 'camp';
+    c.style.marginBottom = (k * 2) + 'px';
+    c.innerHTML = '<i></i><em>' + n + '</em>';
+    camps.appendChild(c);
+  });
+  var cs = camps.children, i = 0;
+  var count = document.getElementById('count'), hs = document.getElementById('hereSmall'), hn = document.getElementById('hereName');
+
+  function fit() {
+    var s = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+    stage.style.transform = 'scale(' + s + ')';
+  }
+  function render() {
+    slides.forEach(function (s, k) { s.classList.toggle('active', k === i); });
+    var cur = parseInt(slides[i].getAttribute('data-sec'), 10);
+    for (var k = 0; k < cs.length; k++) { cs[k].className = 'camp' + (k < cur ? ' done' : '') + (k === cur ? ' now' : ''); }
+    hs.textContent = cur === 0 ? 'Opening' : (cur === 9 ? 'Closing' : 'Section ' + cur + ' of 8');
+    hn.textContent = slides[i].getAttribute('data-name') || SEC[cur];
+    stage.classList.toggle('dark', slides[i].classList.contains('forest'));
+    document.body.classList.toggle('on-dark', slides[i].classList.contains('forest'));
+    document.body.classList.toggle('on-light', !slides[i].classList.contains('forest'));
+    count.textContent = (i + 1) + ' / ' + slides.length;
+    try { history.replaceState(null, '', '#s' + (i + 1)); } catch (e) {}
+  }
+  var PARTS = '.grid > *, .steps > *, tbody tr, .refs p, .ladder > .ex, .ladder > .rail, .ladder > .mine, ul.clean li, .chips .chip, .spec-marks > div, .ring-row > *';
+  function stagger(sl) {
+    var els = sl.querySelectorAll(PARTS);
+    for (var q = 0; q < els.length; q++) { els[q].classList.add('m'); els[q].style.setProperty('--i', Math.min(q, 14)); }
+  }
+  slides.forEach(stagger);
+  function go(n) {
+    var t = Math.max(0, Math.min(slides.length - 1, n));
+    if (t === i) return;
+    stage.classList.remove('fwd', 'back'); void stage.offsetWidth;
+    stage.classList.add(t > i ? 'fwd' : 'back');
+    i = t; render();
+  }
+  window.__go = function (n) { i = n; render(); };
+  document.getElementById('prev').addEventListener('click', function () { go(i - 1); });
+  document.getElementById('next').addEventListener('click', function () { go(i + 1); });
+  document.addEventListener('keydown', function (e) {
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'PageDown' || k === ' ' || k === 'Enter') { e.preventDefault(); go(i + 1); }
+    else if (k === 'ArrowLeft' || k === 'PageUp' || k === 'Backspace') { e.preventDefault(); go(i - 1); }
+    else if (k === 'Home') { go(0); }
+    else if (k === 'End') { go(slides.length - 1); }
+    else if (k === 'f' || k === 'F') { try { if (document.fullscreenElement) { document.exitFullscreen(); } else { document.documentElement.requestFullscreen(); } } catch (err) {} }
+  });
+  document.getElementById('viewport').addEventListener('click', function (e) {
+    if (e.target.closest('button, a')) return;
+    var x = e.clientX / window.innerWidth;
+    if (x > 0.66) go(i + 1); else if (x < 0.33) go(i - 1);
+  });
+  var x0 = null;
+  document.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  document.addEventListener('touchend', function (e) { if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 50) { go(dx < 0 ? i + 1 : i - 1); } x0 = null; }, { passive: true });
+  window.addEventListener('resize', fit);
+  var m = /^#s(\d+)$/.exec(location.hash);
+  if (m) { i = Math.max(0, Math.min(slides.length - 1, parseInt(m[1], 10) - 1)); }
+  fit(); render();
+})();
+</script>
+</body>
+</html>
